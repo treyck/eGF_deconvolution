@@ -191,11 +191,11 @@ def preprocess_trace(file,plot=False):
     network = code.split('.')[1]
     station = code.split('.')[0]
     comp = code.split('.')[2]
-    folder = file.split('/')[-3]
+    id = code.split('.')[-2]
 
-    path = '/oak/stanford/schools/ees/beroza/tknudson/ridgecrest/{}/{}/{}.phase'.format(folder,event,event)
+    path = '{}/{}.phase'.format(event,id)
     ppick,spick,event_start,dist,one,two = retrieve_phases(path,network,station)
-    response_path = '/oak/stanford/schools/ees/beroza/tknudson/ridgecrest/{}/{}/{}.iris.xml'.format(folder,event,event)  
+    response_path = '{}/{}.iris.xml'.format(event,id)  
     inv = read_inventory(response_path)
     #print(ppick,spick,event_start,dist)
     tr = st[0]
