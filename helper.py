@@ -191,6 +191,7 @@ def preprocess_trace(file, plot=False):
 
         try:
             st = read(file)
+            print(f"Successfully read file: {file}")
         except Exception as e:
             print(f"Error reading file {file}: {str(e)}")
             return None, None
@@ -241,6 +242,7 @@ def preprocess_trace(file, plot=False):
             ppick, spick, event_start, dist, one, two = retrieve_phases(path, network, station)
         except Exception as e:
             print(f"Error retrieving phases: {str(e)}")
+            traceback.print_exc()
             return None, None
 
         print("Reading inventory...")
@@ -248,6 +250,7 @@ def preprocess_trace(file, plot=False):
             inv = read_inventory(response_path)
         except Exception as e:
             print(f"Error reading inventory: {str(e)}")
+            traceback.print_exc()
             return None, None
 
         tr = st[0]
@@ -276,8 +279,7 @@ def preprocess_trace(file, plot=False):
         return tr, time_variables
 
     except Exception as e:
-        print(f"Error in preprocess_trace for file {file}: {str(e)}")
-        import traceback
+        print(f"Unexpected error in preprocess_trace for file {file}: {str(e)}")
         traceback.print_exc()
         return None, None
         
