@@ -181,17 +181,23 @@ def raise_to_power(fE,SE,power):
     
     return new_frequencies, new_SE
 
-import os
-import numpy as np
-from obspy import read, read_inventory
-from obspy.signal.invsim import cosine_taper
-import matplotlib.pyplot as plt
-
 def preprocess_trace(file, plot=False):
     try:
         print(f"Starting to process file: {file}")
         
-        st = read(file)
+        if not os.path.exists(file):
+            print(f"Error: File does not exist: {file}")
+            return None, None
+
+        try:
+            st = read(file)
+        except Exception as e:
+            print(f"Error reading file {file}: {str(e)}")
+            return None, None
+
+        if len(st) == 0:
+            print(f"Error: No traces found in file {file}")
+            return None, None
 
         file_parts = file.split('/')
         print(f"File parts: {file_parts}")
@@ -231,9 +237,18 @@ def preprocess_trace(file, plot=False):
             return None, None
 
         print("Retrieving phases...")
-        ppick, spick, event_start, dist, one, two = retrieve_phases(path, network, station)
+        try:
+            ppick, spick, event_start, dist, one, two = retrieve_phases(path, network, station)
+        except Exception as e:
+            print(f"Error retrieving phases: {str(e)}")
+            return None, None
+
         print("Reading inventory...")
-        inv = read_inventory(response_path)
+        try:
+            inv = read_inventory(response_path)
+        except Exception as e:
+            print(f"Error reading inventory: {str(e)}")
+            return None, None
 
         tr = st[0]
 
@@ -265,11 +280,7 @@ def preprocess_trace(file, plot=False):
         import traceback
         traceback.print_exc()
         return None, None
-    except Exception as e:
-        print(f"Error in preprocess_trace for file {file}: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return None, None
+        
 def preprocess_trace_old(file,plot=False):
     
     st = read(file)
