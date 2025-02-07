@@ -182,7 +182,7 @@ def raise_to_power(fE,SE,power):
     
     return new_frequencies, new_SE
 
-def preprocess_trace(file, plot=False):
+def preprocess_trace(file, plot=False,remove_response=False):
     try:
         if not os.path.exists(file):
             return None, None
@@ -218,17 +218,20 @@ def preprocess_trace(file, plot=False):
         inv = read_inventory(response_path)
 
         tr = st[0]
-
+        
         record_start = tr.stats.starttime
         sample_rate = tr.stats.sampling_rate
 
-        data = tr.data
-        times = tr.times()
-        data = (data - np.mean(data))
-        npts = len(data)
-        data = (data * cosine_taper(npts, 0.05, sactaper=True, halfcosine=False))
-
-        tr.data = data
+        if remove_response == True:
+            tr.remove_response(inventory=inv,zero_mean=True,taper=True)
+        else:
+            data = tr.data
+            times = tr.times()
+            data = (data - np.mean(data))
+            npts = len(data)
+            data = (data * cosine_taper(npts, 0.05, sactaper=True, halfcosine=False))
+    
+            tr.data = data
         
         if plot:
             plt.figure()
