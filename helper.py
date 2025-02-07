@@ -181,42 +181,58 @@ def raise_to_power(fE,SE,power):
     
     return new_frequencies, new_SE
 
+import os
+import numpy as np
+from obspy import read, read_inventory
+from obspy.signal.invsim import cosine_taper
+import matplotlib.pyplot as plt
+
 def preprocess_trace(file, plot=False):
     try:
+        print(f"Starting to process file: {file}")
+        
         st = read(file)
 
-        event = file.split('/')[-2]
-        code = file.split('/')[-1]
-        print("File being processed:", file)
-        print("Code =", code)
+        file_parts = file.split('/')
+        print(f"File parts: {file_parts}")
+        
+        if len(file_parts) < 2:
+            print(f"Warning: Unexpected file path format for {file}")
+            return None, None
+
+        event = file_parts[-2]
+        code = file_parts[-1]
+        print(f"Event: {event}, Code: {code}")
 
         parts = code.split('.')
-        if not parts:
-            print(f"Warning: Unable to parse file name for {file}")
-            return None, None
+        print(f"Code parts: {parts}")
 
         if len(parts) < 4:
             print(f"Warning: Unexpected file name format for {file}")
             return None, None
 
-        network = parts[1] if len(parts) > 1 else "Unknown"
+        network = parts[1]
         station = parts[0]
-        comp = parts[2] if len(parts) > 2 else "Unknown"
+        comp = parts[2]
         
-        id = parts[-2] if len(parts) > 3 else "Unknown"
+        id = parts[-2]
 
         path = f'{event}/{id}.phase'
         response_path = f'{event}/{id}.iris.xml'
 
+        print(f"Checking for phase file: {path}")
         if not os.path.exists(path):
             print(f"Warning: Phase file not found: {path}")
             return None, None
 
+        print(f"Checking for response file: {response_path}")
         if not os.path.exists(response_path):
             print(f"Warning: Response file not found: {response_path}")
             return None, None
 
+        print("Retrieving phases...")
         ppick, spick, event_start, dist, one, two = retrieve_phases(path, network, station)
+        print("Reading inventory...")
         inv = read_inventory(response_path)
 
         tr = st[0]
@@ -241,8 +257,14 @@ def preprocess_trace(file, plot=False):
         
         time_variables = (ppick, spick, event_start)
         
+        print("Successfully preprocessed trace.")
         return tr, time_variables
 
+    except Exception as e:
+        print(f"Error in preprocess_trace for file {file}: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return None, None
     except Exception as e:
         print(f"Error in preprocess_trace for file {file}: {str(e)}")
         import traceback
