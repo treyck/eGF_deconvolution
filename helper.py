@@ -224,6 +224,7 @@ def preprocess_trace(file, plot=False,remove_response=False):
 
         if remove_response == True:
             tr.remove_response(inventory=inv,zero_mean=True,taper=True)
+            tr.filter('highpass',freq=0.25)
         else:
             data = tr.data
             times = tr.times()
