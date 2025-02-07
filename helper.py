@@ -188,9 +188,11 @@ def preprocess_trace(file,plot=False):
 
     event = file.split('/')[-2]
     code = file.split('/')[-1]
+    print("Code =")
     network = code.split('.')[1]
     station = code.split('.')[0]
     comp = code.split('.')[2]
+    
     id = code.split('.')[-2]
 
     path = '{}/{}.phase'.format(event,id)
