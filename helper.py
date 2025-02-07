@@ -191,15 +191,19 @@ def preprocess_trace(file, plot=False):
         print("Code =", code)
 
         parts = code.split('.')
+        if not parts:
+            print(f"Warning: Unable to parse file name for {file}")
+            return None, None
+
         if len(parts) < 4:
             print(f"Warning: Unexpected file name format for {file}")
             return None, None
 
-        network = parts[1]
+        network = parts[1] if len(parts) > 1 else "Unknown"
         station = parts[0]
         comp = parts[2] if len(parts) > 2 else "Unknown"
         
-        id = parts[-2]
+        id = parts[-2] if len(parts) > 3 else "Unknown"
 
         path = f'{event}/{id}.phase'
         response_path = f'{event}/{id}.iris.xml'
@@ -244,7 +248,6 @@ def preprocess_trace(file, plot=False):
         import traceback
         traceback.print_exc()
         return None, None
-
 def preprocess_trace_old(file,plot=False):
     
     st = read(file)
