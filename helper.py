@@ -181,7 +181,71 @@ def raise_to_power(fE,SE,power):
     
     return new_frequencies, new_SE
 
-def preprocess_trace(file,plot=False):
+def preprocess_trace(file, plot=False):
+    try:
+        st = read(file)
+
+        event = file.split('/')[-2]
+        code = file.split('/')[-1]
+        print("File being processed:", file)
+        print("Code =", code)
+
+        parts = code.split('.')
+        if len(parts) < 4:
+            print(f"Warning: Unexpected file name format for {file}")
+            return None, None
+
+        network = parts[1]
+        station = parts[0]
+        comp = parts[2] if len(parts) > 2 else "Unknown"
+        
+        id = parts[-2]
+
+        path = f'{event}/{id}.phase'
+        response_path = f'{event}/{id}.iris.xml'
+
+        if not os.path.exists(path):
+            print(f"Warning: Phase file not found: {path}")
+            return None, None
+
+        if not os.path.exists(response_path):
+            print(f"Warning: Response file not found: {response_path}")
+            return None, None
+
+        ppick, spick, event_start, dist, one, two = retrieve_phases(path, network, station)
+        inv = read_inventory(response_path)
+
+        tr = st[0]
+
+        record_start = tr.stats.starttime
+        sample_rate = tr.stats.sampling_rate
+
+        data = tr.data
+        times = tr.times()
+        data = (data - np.mean(data))
+        npts = len(data)
+        data = (data * cosine_taper(npts, 0.05, sactaper=True, halfcosine=False))
+
+        tr.data = data
+        
+        if plot:
+            plt.figure()
+            difference_sec = event_start - record_start
+            plt.plot(times, data)
+            plt.axvline(difference_sec+spick, c='r')
+            plt.axvline(difference_sec+spick+10, c='r')
+        
+        time_variables = (ppick, spick, event_start)
+        
+        return tr, time_variables
+
+    except Exception as e:
+        print(f"Error in preprocess_trace for file {file}: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return None, None
+
+def preprocess_trace_old(file,plot=False):
     
     st = read(file)
 
