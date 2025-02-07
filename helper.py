@@ -9,6 +9,7 @@ from scipy.integrate import simps
 from obspy import read, read_inventory
 from obspy.core import UTCDateTime
 from obspy.signal.invsim import cosine_taper
+import traceback
 
 
 def spectrum(data, win, nfft, n1=0, n2=0,ver='real'):
