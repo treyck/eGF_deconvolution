@@ -192,91 +192,88 @@ def preprocess_trace(file, plot=False):
         try:
             st = read(file)
             print(f"Successfully read file: {file}")
+            print(f"Number of traces in stream: {len(st)}")
+            if len(st) == 0:
+                print(f"Error: No traces found in file {file}")
+                return None, None
         except Exception as e:
             print(f"Error reading file {file}: {str(e)}")
+            traceback.print_exc()
             return None, None
 
-        if len(st) == 0:
-            print(f"Error: No traces found in file {file}")
-            return None, None
-
-        file_parts = file.split('/')
-        print(f"File parts: {file_parts}")
-        
-        if len(file_parts) < 2:
-            print(f"Warning: Unexpected file path format for {file}")
-            return None, None
-
-        event = file_parts[-2]
-        code = file_parts[-1]
-        print(f"Event: {event}, Code: {code}")
-
-        parts = code.split('.')
-        print(f"Code parts: {parts}")
-
-        if len(parts) < 4:
-            print(f"Warning: Unexpected file name format for {file}")
-            return None, None
-
-        network = parts[1]
-        station = parts[0]
-        comp = parts[2]
-        
-        id = parts[-2]
-
-        path = f'{event}/{id}.phase'
-        response_path = f'{event}/{id}.iris.xml'
-
-        print(f"Checking for phase file: {path}")
-        if not os.path.exists(path):
-            print(f"Warning: Phase file not found: {path}")
-            return None, None
-
-        print(f"Checking for response file: {response_path}")
-        if not os.path.exists(response_path):
-            print(f"Warning: Response file not found: {response_path}")
-            return None, None
-
-        print("Retrieving phases...")
         try:
+            file_parts = file.split('/')
+            print(f"File parts: {file_parts}")
+            
+            if len(file_parts) < 2:
+                print(f"Warning: Unexpected file path format for {file}")
+                return None, None
+
+            event = file_parts[-2]
+            code = file_parts[-1]
+            print(f"Event: {event}, Code: {code}")
+
+            parts = code.split('.')
+            print(f"Code parts: {parts}")
+
+            if len(parts) < 4:
+                print(f"Warning: Unexpected file name format for {file}")
+                return None, None
+
+            network = parts[1]
+            station = parts[0]
+            comp = parts[2]
+            
+            id = parts[-2]
+
+            path = f'{event}/{id}.phase'
+            response_path = f'{event}/{id}.iris.xml'
+
+            print(f"Checking for phase file: {path}")
+            if not os.path.exists(path):
+                print(f"Warning: Phase file not found: {path}")
+                return None, None
+
+            print(f"Checking for response file: {response_path}")
+            if not os.path.exists(response_path):
+                print(f"Warning: Response file not found: {response_path}")
+                return None, None
+
+            print("Retrieving phases...")
             ppick, spick, event_start, dist, one, two = retrieve_phases(path, network, station)
-        except Exception as e:
-            print(f"Error retrieving phases: {str(e)}")
-            traceback.print_exc()
-            return None, None
 
-        print("Reading inventory...")
-        try:
+            print("Reading inventory...")
             inv = read_inventory(response_path)
+
+            tr = st[0]
+
+            record_start = tr.stats.starttime
+            sample_rate = tr.stats.sampling_rate
+
+            data = tr.data
+            times = tr.times()
+            data = (data - np.mean(data))
+            npts = len(data)
+            data = (data * cosine_taper(npts, 0.05, sactaper=True, halfcosine=False))
+
+            tr.data = data
+            
+            if plot:
+                plt.figure()
+                difference_sec = event_start - record_start
+                plt.plot(times, data)
+                plt.axvline(difference_sec+spick, c='r')
+                plt.axvline(difference_sec+spick+10, c='r')
+            
+            time_variables = (ppick, spick, event_start)
+            
+            print("Successfully preprocessed trace.")
+            return tr, time_variables
+
         except Exception as e:
-            print(f"Error reading inventory: {str(e)}")
+            print(f"Error in processing steps for file {file}: {str(e)}")
             traceback.print_exc()
             return None, None
-
-        tr = st[0]
-
-        record_start = tr.stats.starttime
-        sample_rate = tr.stats.sampling_rate
-
-        data = tr.data
-        times = tr.times()
-        data = (data - np.mean(data))
-        npts = len(data)
-        data = (data * cosine_taper(npts, 0.05, sactaper=True, halfcosine=False))
-
-        tr.data = data
-        
-        if plot:
-            plt.figure()
-            difference_sec = event_start - record_start
-            plt.plot(times, data)
-            plt.axvline(difference_sec+spick, c='r')
-            plt.axvline(difference_sec+spick+10, c='r')
-        
-        time_variables = (ppick, spick, event_start)
-        
-        print("Successfully preprocessed trace.")
-        return tr, time_variables
 
     except Exception as e:
         print(f"Unexpected error in preprocess_trace for file {file}: {str(e)}")
